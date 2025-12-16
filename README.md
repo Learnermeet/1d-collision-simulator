@@ -2,11 +2,10 @@
 
 A Python-based 1D collision simulator built using **Pygame**.
 This project demonstrates elastic collisions between two objects with
-customizable mass, velocity, and shape.
+customizable mass & velocity.
 
 ## Features
 - User input for mass and velocity
-- Shape selection (Circle, Square, Triangle)
 - Real-time elastic collision physics
 - Wall collision handling
 - Simple interactive UI

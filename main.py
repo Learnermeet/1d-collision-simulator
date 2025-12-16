@@ -9,6 +9,8 @@ pygame.mixer.init()
 
 # SCREEN SETUP
 WIDTH, HEIGHT = 1080, 670
+# FULLSCREEN FLAG
+fullscreen = False
 
 # Screen create kar rahe hain jahan sab draw hoga
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -164,8 +166,6 @@ constraints_box = pygame.Rect(
     120              # Height
 )
 
-
-
 # PHYSICS VARIABLES
 x1, x2 = 200, 800
 v1 = v2 = 0
@@ -206,6 +206,14 @@ while running:
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
+                    # FULLSCREEN TOGGLE (F key)
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_f:
+                fullscreen = not fullscreen
+                if fullscreen:
+                    screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
+                else:
+                    screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
         # START SCREEN INPUT 
         if not simulation_started:
@@ -300,7 +308,7 @@ while running:
             )
                     # INPUT CONSTRAINTS BOX (STATIC)
         # Ye box hamesha visible rahega, blink nahi karega
-        pygame.draw.rect(screen, WHITE, constraints_box, border_radius=12)
+        pygame.draw.rect(screen, (245, 245, 245), constraints_box, border_radius=12)
         pygame.draw.rect(screen, BLACK, constraints_box, 2, border_radius=12)
 
         title = FONT.render("Input Constraints:", True, BLACK)

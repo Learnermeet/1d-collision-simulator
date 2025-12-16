@@ -8,7 +8,6 @@ pygame.init()
 pygame.mixer.init()
 
 # SCREEN SETUP
-# Window ka size define kar rahe hain
 WIDTH, HEIGHT = 1080, 670
 
 # Screen create kar rahe hain jahan sab draw hoga
@@ -22,7 +21,8 @@ FONT = pygame.font.SysFont(None, 28)
 BIGFONT = pygame.font.SysFont(None, 40)
 TITLEFONT = pygame.font.SysFont(None, 48)
 
-# Colors define (RGB format me)
+
+# Colors define 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GRAY = (170, 170, 170)
@@ -31,9 +31,7 @@ RED = (255, 80, 80)
 GREEN = (0, 255, 120)
 ORANGE = (255, 200, 0)
 
-# --------------------------------------------------
-# SOUND LOAD
-# --------------------------------------------------
+# SOUND LOADING
 # Collision ke time jo sound bajega usko load kar rahe hain
 # Ye file sounds folder ke andar honi chahiye
 collision_sound = pygame.mixer.Sound("sounds/collision.wav")
@@ -45,9 +43,17 @@ collision_sound.set_volume(volume)
 # Ye flag decide karega sound bajega ya nahi
 sound_on = True
 
-# --------------------------------------------------
+# ================= INPUT VALIDATION LIMITS =================
+# Ye limits invalid inputs ko rokne ke liye hain
+MIN_MASS = 0.1                 # Mass zero ya negative nahi ho sakta
+MAX_VELOCITY = 20              # Velocity ki safe limit
+
+# Error message dikhane ke liye variables
+error_message = ""
+error_timer = 0                # Frames ke hisaab se error auto-hide hoga
+# ==========================================================
+
 # INPUT BOX CLASS
-# --------------------------------------------------
 # Ye class user se mass aur velocity input lene ke liye banayi hai
 class InputBox:
     def __init__(self, x, y, w, h):
@@ -77,7 +83,12 @@ class InputBox:
                 self.text = self.text[:-1]
             else:
                 # Sirf numbers, dot aur minus allow kar rahe hain
-                if event.unicode.isdigit() or event.unicode in ".-":
+                # Extra check: multiple dots ya minus avoid karne ke liye
+                if (
+                    event.unicode.isdigit()
+                    or (event.unicode == "." and "." not in self.text)
+                    or (event.unicode == "-" and self.text == "")
+                ):
                     self.text += event.unicode
 
     def draw(self):
@@ -124,106 +135,79 @@ class InputBox:
         self.text = ""
         self.active = False
 
-# --------------------------------------------------
 # INPUT BOXES (START SCREEN)
-# --------------------------------------------------
-# Upper gap issue fix karne ke liye ek common base aur gap use kar rahe hain
-form_start_y = 190   # Title ke baad proper space
-form_gap = 70        # Har input ke beech equal distance
+form_start_y = 190
+form_gap = 70
 
-# 4 input boxes: 2 mass ke liye, 2 velocity ke liye
 input_boxes = [
-    InputBox(440, form_start_y + 0 * form_gap, 200, 55),  # Mass of object 1
-    InputBox(440, form_start_y + 1 * form_gap, 200, 55),  # Mass of object 2
-    InputBox(440, form_start_y + 2 * form_gap, 200, 55),  # Velocity of object 1
-    InputBox(440, form_start_y + 3 * form_gap, 200, 55),  # Velocity of object 2
+    InputBox(440, form_start_y + 0 * form_gap, 200, 55),
+    InputBox(440, form_start_y + 1 * form_gap, 200, 55),
+    InputBox(440, form_start_y + 2 * form_gap, 200, 55),
+    InputBox(440, form_start_y + 3 * form_gap, 200, 55),
 ]
 
-# --------------------------------------------------
 # BUTTONS
-# --------------------------------------------------
-# Start button (start screen pe)
 start_button = pygame.Rect(420, form_start_y + 4 * form_gap + 10, 220, 55)
-
-# Pause aur reset buttons (simulation screen pe)
 pause_button = pygame.Rect(800, 20, 170, 45)
 reset_button = pygame.Rect(800, 75, 170, 45)
 
-# Sound ON/OFF button
 slider_bar = pygame.Rect(WIDTH - 260, 500, 200, 5)
-
 slider_knob_x = slider_bar.x + int(volume * slider_bar.width)
-
 sound_button = pygame.Rect(WIDTH - 240, 520, 160, 40)
 
-# Slider ka knob initial position
-slider_knob_x = slider_bar.x + int(volume * slider_bar.width)
+# CONSTRAINTS INFO BOX (RIGHT SIDE - ABOVE VOLUME SLIDER)
+# Right margin se thoda left, volume slider ke upar
+constraints_box = pygame.Rect(
+    WIDTH - 300,     # X position (right side)
+    100,             # Y position (volume slider ke upar)
+    260,             # Width
+    120              # Height
+)
 
-# --------------------------------------------------
+
+
 # PHYSICS VARIABLES
-# --------------------------------------------------
-# Objects ki starting positions
 x1, x2 = 200, 800
-
-# Initial velocities
 v1 = v2 = 0
-
-# Initial masses
 m1 = m2 = 1
 
-# Ye flag batata hai simulation start hui ya nahi
 simulation_started = False
-
-# Ye pause/resume ke liye use hoga
 paused = False
-
-# Ye flag repeat collision avoid karta hai
 collision_happened = False
 
-# --------------------------------------------------
 # RESET FUNCTION
-# --------------------------------------------------
-# Ye function poori simulation ko wapas start screen pe le jaata hai
 def reset_simulation():
     global x1, x2, v1, v2, m1, m2
     global simulation_started, paused, collision_happened
+    global error_message, error_timer
 
-    # Positions reset
     x1, x2 = 200, 800
-
-    # Velocities reset
     v1 = v2 = 0
-
-    # Mass reset
     m1 = m2 = 1
 
-    # Flags reset
     simulation_started = False
     paused = False
     collision_happened = False
 
-    # Input boxes clear
+    error_message = ""
+    error_timer = 0
+
     for box in input_boxes:
         box.clear()
 
-# --------------------------------------------------
 # MAIN LOOP
-# --------------------------------------------------
 clock = pygame.time.Clock()
 running = True
 
 while running:
     screen.fill((235, 235, 235))
 
-    # --------------------------------------------------
-    # EVENT HANDLING
-    # --------------------------------------------------
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
 
-        # ---------------- START SCREEN INPUT ----------------
+        # START SCREEN INPUT 
         if not simulation_started:
             for box in input_boxes:
                 box.handle_event(event)
@@ -231,33 +215,45 @@ while running:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if start_button.collidepoint(event.pos):
                     try:
-                        # Input values ko float me convert kar rahe hain
                         m1 = float(input_boxes[0].get_value())
                         m2 = float(input_boxes[1].get_value())
                         v1 = float(input_boxes[2].get_value())
                         v2 = float(input_boxes[3].get_value())
 
-                        # Sab sahi ho to simulation start
-                        simulation_started = True
-                    except:
-                        pass
+                        # MASS VALIDATION
+                        if m1 <= 0 or m2 <= 0:
+                            raise ValueError("Mass must be greater than 0")
 
-        # ---------------- PAUSE BUTTON ----------------
+                        # VELOCITY RANGE CHECK
+                        if abs(v1) > MAX_VELOCITY or abs(v2) > MAX_VELOCITY:
+                            raise ValueError(
+                                f"Velocity must be between -{MAX_VELOCITY} and {MAX_VELOCITY}"
+                            )
+
+                        # Sab valid hai to simulation start
+                        error_message = ""
+                        simulation_started = True
+
+                    except ValueError as e:
+                        error_message = str(e)
+                        error_timer = 180   # ~3 seconds
+
+                    except:
+                        error_message = "Invalid input"
+                        error_timer = 180   # ~3 seconds
+
         if event.type == pygame.MOUSEBUTTONDOWN:
             if pause_button.collidepoint(event.pos) and simulation_started:
                 paused = not paused
 
-        # ---------------- RESET BUTTON ----------------
         if event.type == pygame.MOUSEBUTTONDOWN:
             if reset_button.collidepoint(event.pos):
                 reset_simulation()
 
-        # ---------------- SOUND TOGGLE ----------------
         if event.type == pygame.MOUSEBUTTONDOWN:
             if sound_button.collidepoint(event.pos):
                 sound_on = not sound_on
 
-        # ---------------- VOLUME SLIDER ----------------
         if event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEMOTION):
             if pygame.mouse.get_pressed()[0]:
                 if slider_bar.collidepoint(pygame.mouse.get_pos()):
@@ -265,10 +261,9 @@ while running:
                         slider_bar.x,
                         min(pygame.mouse.get_pos()[0], slider_bar.x + slider_bar.width)
                     )
-
-                    # Volume calculate (0 to 1)
                     volume = (slider_knob_x - slider_bar.x) / slider_bar.width
                     collision_sound.set_volume(volume)
+
     # START SCREEN UI
     if not simulation_started:
         title = TITLEFONT.render("1D Collision Simulator", True, BLACK)
@@ -295,6 +290,32 @@ while running:
             BIGFONT.render("START", True, BLACK),
             (start_button.x + 65, start_button.y + 12)
         )
+
+        # ERROR MESSAGE DISPLAY (CENTERED)
+        if error_message:
+            err = FONT.render(error_message, True, RED)
+            screen.blit(
+                err,
+                (WIDTH // 2 - err.get_width() // 2, start_button.y + 70)
+            )
+                    # INPUT CONSTRAINTS BOX (STATIC)
+        # Ye box hamesha visible rahega, blink nahi karega
+        pygame.draw.rect(screen, WHITE, constraints_box, border_radius=12)
+        pygame.draw.rect(screen, BLACK, constraints_box, 2, border_radius=12)
+
+        title = FONT.render("Input Constraints:", True, BLACK)
+        screen.blit(title, (constraints_box.x + 15, constraints_box.y + 10))
+
+        c1 = FONT.render("• Mass > 0", True, BLACK)
+        screen.blit(c1, (constraints_box.x + 15, constraints_box.y + 45))
+
+        c2 = FONT.render(
+            f"• Velocity range: -{MAX_VELOCITY} to {MAX_VELOCITY}",
+            True,
+            BLACK
+        )
+        screen.blit(c2, (constraints_box.x + 15, constraints_box.y + 75))
+
 
     # SIMULATION SCREEN
     else:
@@ -350,9 +371,15 @@ while running:
     pygame.draw.rect(screen, BLACK, slider_bar)
     pygame.draw.circle(screen, RED, (slider_knob_x, slider_bar.y + 2), 8)
     screen.blit(
-    FONT.render("Volume", True, BLACK),
-    (slider_bar.x, slider_bar.y - 25)
+        FONT.render("Volume", True, BLACK),
+        (slider_bar.x, slider_bar.y - 25)
     )
+
+    # ERROR MESSAGE TIMER (auto hide)
+    if error_timer > 0:
+        error_timer -= 1
+    else:
+        error_message = ""
 
     pygame.display.update()
     clock.tick(60)

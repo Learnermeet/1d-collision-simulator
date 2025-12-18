@@ -1,3 +1,4 @@
+import math
 import pygame
 import sys
 
@@ -171,19 +172,35 @@ x1, x2 = 200, 800
 v1 = v2 = 0
 m1 = m2 = 1
 
+MIN_RADIUS = 1
+MAX_RADIUS = 45
+
+def compute_radius(mass):
+    return max(
+        MIN_RADIUS,
+        min(MAX_RADIUS, int(4 + math.sqrt(mass) * 6))
+    )
+
+radius1 = compute_radius(m1)
+radius2 = compute_radius(m2)
+
+
 simulation_started = False
 paused = False
 collision_happened = False
 
 # RESET FUNCTION
 def reset_simulation():
-    global x1, x2, v1, v2, m1, m2
+    global x1, x2, v1, v2, m1, m2, radius1, radius2
     global simulation_started, paused, collision_happened
     global error_message, error_timer
 
     x1, x2 = 200, 800
     v1 = v2 = 0
     m1 = m2 = 1
+
+    radius1 = compute_radius(m1)
+    radius2 = compute_radius(m2)
 
     simulation_started = False
     paused = False
@@ -231,6 +248,10 @@ while running:
                         # MASS VALIDATION
                         if m1 <= 0 or m2 <= 0:
                             raise ValueError("Mass must be greater than 0")
+                        radius1 = compute_radius(m1)
+                        radius2 = compute_radius(m2)
+
+
 
                         # VELOCITY RANGE CHECK
                         if abs(v1) > MAX_VELOCITY or abs(v2) > MAX_VELOCITY:
@@ -327,8 +348,8 @@ while running:
 
     # SIMULATION SCREEN
     else:
-        pygame.draw.circle(screen, BLUE, (int(x1), HEIGHT // 2), 25)
-        pygame.draw.circle(screen, RED, (int(x2), HEIGHT // 2), 25)
+        pygame.draw.circle(screen, BLUE, (int(x1), HEIGHT // 2), radius1)
+        pygame.draw.circle(screen, RED, (int(x2), HEIGHT // 2), radius2)
 
         info1 = FONT.render(f"Object 1 | Mass: {m1} | Velocity: {v1:.2f}", True, BLACK)
         info2 = FONT.render(f"Object 2 | Mass: {m2} | Velocity: {v2:.2f}", True, BLACK)
@@ -340,12 +361,12 @@ while running:
             x1 += v1
             x2 += v2
 
-            if x1 <= 50 or x1 >= WIDTH - 50:
+            if x1 <= radius1 or x1 >= WIDTH - radius1:
                 v1 = -v1
-            if x2 <= 50 or x2 >= WIDTH - 50:
+            if x2 <= radius2 or x2 >= WIDTH - radius2:
                 v2 = -v2
 
-            if abs(x1 - x2) < 50 and not collision_happened:
+            if abs(x1 - x2) < (radius1 + radius2) and not collision_happened:
                 if sound_on:
                     collision_sound.play()
 
@@ -355,7 +376,7 @@ while running:
                 v1, v2 = new_v1, new_v2
                 collision_happened = True
 
-            if abs(x1 - x2) >= 50:
+            if abs(x1 - x2) >= (radius1 + radius2):
                 collision_happened = False
 
         pygame.draw.rect(screen, ORANGE, pause_button, border_radius=10)

@@ -156,7 +156,9 @@ input_boxes[0].active = True
 start_button = pygame.Rect(420, form_start_y + 4 * form_gap + 10, 220, 55)
 pause_button = pygame.Rect(800, 20, 170, 45)
 reset_button = pygame.Rect(800, 75, 170, 45)
+exit_button = pygame.Rect(800, 130, 170, 45)
 
+# VOLUME SLIDER (BOTTOM RIGHT)
 slider_bar = pygame.Rect(WIDTH - 260, 500, 200, 5)
 slider_knob_x = slider_bar.x + int(volume * slider_bar.width)
 sound_button = pygame.Rect(WIDTH - 240, 520, 160, 40)
@@ -239,6 +241,9 @@ while running:
                     screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
                 else:
                     screen = pygame.display.set_mode((WIDTH, HEIGHT))
+            elif event.key == pygame.K_ESCAPE:  # ESC key to exit
+                pygame.quit()
+                sys.exit()
 
         # START SCREEN INPUT 
         if not simulation_started:
@@ -313,6 +318,11 @@ while running:
         if event.type == pygame.MOUSEBUTTONDOWN:
             if pause_button.collidepoint(event.pos) and simulation_started:
                 paused = not paused
+        
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if exit_button.collidepoint(event.pos):
+                pygame.quit()
+                sys.exit()
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             if reset_button.collidepoint(event.pos):
@@ -430,6 +440,12 @@ while running:
             (reset_button.x + 55, reset_button.y + 12)
         )
 
+        pygame.draw.rect(screen, RED, exit_button, border_radius=10)
+        screen.blit(
+            FONT.render("EXIT", True, BLACK),
+            (exit_button.x + 60, exit_button.y + 12)
+        )
+
     # SOUND UI (COMMON)
     pygame.draw.rect(screen, GRAY, sound_button, border_radius=10)
     sound_text = "Sound: ON" if sound_on else "Sound: OFF"
@@ -453,3 +469,4 @@ while running:
     clock.tick(60)
 
 pygame.quit()
+

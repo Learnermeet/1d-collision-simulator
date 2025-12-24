@@ -35,8 +35,6 @@ GREEN = (0, 255, 120)
 ORANGE = (255, 200, 0)
 
 # SOUND LOADING
-# Collision ke time jo sound bajega usko load kar rahe hain
-# Ye file sounds folder ke andar honi chahiye
 collision_sound = pygame.mixer.Sound("sounds/collision.wav")
 
 # Default volume 50% rakha hai
@@ -47,46 +45,38 @@ collision_sound.set_volume(volume)
 sound_on = True
 
 # ================= INPUT VALIDATION LIMITS =================
-# Ye limits invalid inputs ko rokne ke liye hain
-MIN_MASS = 0.1                 # Mass zero ya negative nahi ho sakta
-MAX_VELOCITY = 20              # Velocity ki safe limit
+MIN_MASS = 0.1                 
+MAX_VELOCITY = 20              
 
 # Error message dikhane ke liye variables
 error_message = ""
-error_timer = 0                # Frames ke hisaab se error auto-hide hoga
-# ==========================================================
+error_timer = 0                
 
-# INPUT BOX CLASS
-# Ye class user se mass aur velocity input lene ke liye banayi hai
+# To take input from user 
 class InputBox:
     def __init__(self, x, y, w, h):
-        # Input box ka area (position + size)
+        # Rectangle define kar rahe hain input box ke liye
         self.rect = pygame.Rect(x, y, w, h)
-
-        # Box ke andar jo text user likhega
+        # Text initialize kar rahe hain
         self.text = ""
-
-        # Ye batata hai box active hai ya nahi
+        # Input box active hai ya nahi
         self.active = False
-
         # Cursor blink ke liye variables
-        # Isse box ke andar typing realistic lagegi
         self.cursor_visible = True
         self.cursor_timer = 0
 
     def handle_event(self, event):
-        # Mouse click se check karte hain box pe click hua ya nahi
+        # Mouse click se pata chalega ki input box active hai ya nahi
         if event.type == pygame.MOUSEBUTTONDOWN:
             self.active = self.rect.collidepoint(event.pos)
 
-        # Keyboard input tabhi lena hai jab box active ho
+        # Keyboard input handle kar rahe hain
         if event.type == pygame.KEYDOWN and self.active:
             if event.key == pygame.K_BACKSPACE:
-                # Backspace dabane pe last character delete
+                # Backspace se last character hata denge
                 self.text = self.text[:-1]
             else:
-                # Sirf numbers, dot aur minus allow kar rahe hain
-                # Extra check: multiple dots ya minus avoid karne ke liye
+                # Sirf valid characters hi allow karenge (digits, dot, minus)
                 if (
                     event.unicode.isdigit()
                     or (event.unicode == "." and "." not in self.text)
@@ -95,10 +85,9 @@ class InputBox:
                     self.text += event.unicode
 
     def draw(self):
-        # Input box ka white background (rounded look ke saath)
+        # Input box draw kar rahe hain
         pygame.draw.rect(screen, WHITE, self.rect, border_radius=12)
-
-        # Active hone pe blue border, warna black
+        # Border color change kar rahe hain based on active state
         pygame.draw.rect(
             screen,
             BLUE if self.active else BLACK,
@@ -107,12 +96,10 @@ class InputBox:
             border_radius=12
         )
 
-        # Text ko screen pe render kar rahe hain
+        # Text render kar rahe hain
         txt = FONT.render(self.text, True, BLACK)
         screen.blit(txt, (self.rect.x + 10, self.rect.y + 18))
-
-        # Cursor blink logic
-        # Ye har kuch frames me cursor ko on/off karta hai
+        # Cursor blink effect
         if self.active:
             self.cursor_timer += 1
             if self.cursor_timer % 30 == 0:
@@ -130,11 +117,11 @@ class InputBox:
                 )
 
     def get_value(self):
-        # Input value ko return karte hain
+        # Input box ka text return kar rahe hain
         return self.text.strip()
 
     def clear(self):
-        # Reset ke time input box empty karne ke liye
+        # Input box ka text clear kar denge
         self.text = ""
         self.active = False
 
@@ -151,7 +138,6 @@ input_boxes = [
 active_box_index = 0
 input_boxes[0].active = True
 
-
 # BUTTONS
 start_button = pygame.Rect(420, form_start_y + 4 * form_gap + 10, 220, 55)
 pause_button = pygame.Rect(800, 20, 170, 45)
@@ -163,13 +149,12 @@ slider_bar = pygame.Rect(WIDTH - 260, 500, 200, 5)
 slider_knob_x = slider_bar.x + int(volume * slider_bar.width)
 sound_button = pygame.Rect(WIDTH - 240, 520, 160, 40)
 
-# CONSTRAINTS INFO BOX (RIGHT SIDE - ABOVE VOLUME SLIDER)
-# Right margin se thoda left, volume slider ke upar
+# CONSTRAINTS INFO BOX
 constraints_box = pygame.Rect(
-    WIDTH - 300,     # X position (right side)
-    100,             # Y position (volume slider ke upar)
-    260,             # Width
-    120              # Height
+    WIDTH - 300,     
+    100,             
+    260,             
+    120              
 )
 
 # PHYSICS VARIABLES
@@ -188,7 +173,6 @@ def compute_radius(mass):
 
 radius1 = compute_radius(m1)
 radius2 = compute_radius(m2)
-
 
 simulation_started = False
 paused = False
@@ -221,7 +205,6 @@ def reset_simulation():
     for i, box in enumerate(input_boxes):
         box.active = (i == 0)
 
-
 # MAIN LOOP
 clock = pygame.time.Clock()
 running = True
@@ -233,7 +216,7 @@ while running:
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
-                    # FULLSCREEN TOGGLE (F key)
+
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_f:
                 fullscreen = not fullscreen
@@ -241,11 +224,14 @@ while running:
                     screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
                 else:
                     screen = pygame.display.set_mode((WIDTH, HEIGHT))
-            elif event.key == pygame.K_ESCAPE:  # ESC key to exit
+            elif event.key == pygame.K_ESCAPE:
                 pygame.quit()
                 sys.exit()
+            elif event.key == pygame.K_SPACE and simulation_started:
+                paused = not paused
+            elif event.key == pygame.K_r and simulation_started:
+                reset_simulation()
 
-        # START SCREEN INPUT 
         if not simulation_started:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_TAB:
                 input_boxes[active_box_index].active = False
@@ -257,7 +243,6 @@ while running:
             for box in input_boxes:
                 box.handle_event(event)
 
-            #  (ENTER → START simulation)
             if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
                 try:
                     m1 = float(input_boxes[0].get_value())
@@ -293,45 +278,38 @@ while running:
                     m2 = float(input_boxes[1].get_value())
                     v1 = float(input_boxes[2].get_value())
                     v2 = float(input_boxes[3].get_value())
-                        # MASS VALIDATION
                     if m1 <= 0 or m2 <= 0:
                         raise ValueError("Mass must be greater than 0")
                     radius1 = compute_radius(m1)
                     radius2 = compute_radius(m2)
-                    # VELOCITY RANGE CHECK
                     if abs(v1) > MAX_VELOCITY or abs(v2) > MAX_VELOCITY:
                         raise ValueError(
                             f"Velocity must be between -{MAX_VELOCITY} and {MAX_VELOCITY}"
                         )
-                        # Sab valid hai to simulation start
                     error_message = ""
                     simulation_started = True
 
                 except ValueError as e:
                     error_message = str(e)
-                    error_timer = 180   # ~3 seconds
+                    error_timer = 180
 
                 except:
                     error_message = "Invalid input"
-                    error_timer = 180   # ~3 seconds
+                    error_timer = 180
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             if pause_button.collidepoint(event.pos) and simulation_started:
                 paused = not paused
-        
         if event.type == pygame.MOUSEBUTTONDOWN:
             if exit_button.collidepoint(event.pos):
                 pygame.quit()
                 sys.exit()
-
         if event.type == pygame.MOUSEBUTTONDOWN:
             if reset_button.collidepoint(event.pos):
                 reset_simulation()
-
         if event.type == pygame.MOUSEBUTTONDOWN:
             if sound_button.collidepoint(event.pos):
                 sound_on = not sound_on
-
         if event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEMOTION):
             if pygame.mouse.get_pressed()[0]:
                 if slider_bar.collidepoint(pygame.mouse.get_pos()):
@@ -369,15 +347,13 @@ while running:
             (start_button.x + 65, start_button.y + 12)
         )
 
-        # ERROR MESSAGE DISPLAY (CENTERED)
         if error_message:
             err = FONT.render(error_message, True, RED)
             screen.blit(
                 err,
                 (WIDTH // 2 - err.get_width() // 2, start_button.y + 70)
             )
-                    # INPUT CONSTRAINTS BOX (STATIC)
-        # Ye box hamesha visible rahega, blink nahi karega
+
         pygame.draw.rect(screen, (245, 245, 245), constraints_box, border_radius=12)
         pygame.draw.rect(screen, BLACK, constraints_box, 2, border_radius=12)
 
@@ -389,11 +365,9 @@ while running:
 
         c2 = FONT.render(
             f"• Velocity range: -{MAX_VELOCITY} to {MAX_VELOCITY}",
-            True,
-            BLACK
+            True, BLACK
         )
         screen.blit(c2, (constraints_box.x + 15, constraints_box.y + 75))
-
 
     # SIMULATION SCREEN
     else:
@@ -446,7 +420,6 @@ while running:
             (exit_button.x + 60, exit_button.y + 12)
         )
 
-    # SOUND UI (COMMON)
     pygame.draw.rect(screen, GRAY, sound_button, border_radius=10)
     sound_text = "Sound: ON" if sound_on else "Sound: OFF"
     screen.blit(FONT.render(sound_text, True, BLACK),
@@ -459,7 +432,6 @@ while running:
         (slider_bar.x, slider_bar.y - 25)
     )
 
-    # ERROR MESSAGE TIMER (auto hide)
     if error_timer > 0:
         error_timer -= 1
     else:
@@ -469,4 +441,3 @@ while running:
     clock.tick(60)
 
 pygame.quit()
-

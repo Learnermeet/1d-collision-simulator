@@ -148,6 +148,9 @@ input_boxes = [
     InputBox(440, form_start_y + 2 * form_gap, 200, 55),
     InputBox(440, form_start_y + 3 * form_gap, 200, 55),
 ]
+active_box_index = 0
+input_boxes[0].active = True
+
 
 # BUTTONS
 start_button = pygame.Rect(420, form_start_y + 4 * form_gap + 10, 220, 55)
@@ -211,6 +214,11 @@ def reset_simulation():
 
     for box in input_boxes:
         box.clear()
+    global active_box_index
+    active_box_index = 0
+    for i, box in enumerate(input_boxes):
+        box.active = (i == 0)
+
 
 # MAIN LOOP
 clock = pygame.time.Clock()
@@ -234,42 +242,73 @@ while running:
 
         # START SCREEN INPUT 
         if not simulation_started:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_TAB:
+                input_boxes[active_box_index].active = False
+                if pygame.key.get_mods() & pygame.KMOD_SHIFT:
+                    active_box_index = (active_box_index - 1) % len(input_boxes)
+                else:
+                    active_box_index = (active_box_index + 1) % len(input_boxes)
+                input_boxes[active_box_index].active = True
             for box in input_boxes:
                 box.handle_event(event)
 
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if start_button.collidepoint(event.pos):
-                    try:
-                        m1 = float(input_boxes[0].get_value())
-                        m2 = float(input_boxes[1].get_value())
-                        v1 = float(input_boxes[2].get_value())
-                        v2 = float(input_boxes[3].get_value())
+            #  (ENTER → START simulation)
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                try:
+                    m1 = float(input_boxes[0].get_value())
+                    m2 = float(input_boxes[1].get_value())
+                    v1 = float(input_boxes[2].get_value())
+                    v2 = float(input_boxes[3].get_value())
 
+                    if m1 <= 0 or m2 <= 0:
+                        raise ValueError("Mass must be greater than 0")
+
+                    radius1 = compute_radius(m1)
+                    radius2 = compute_radius(m2)
+
+                    if abs(v1) > MAX_VELOCITY or abs(v2) > MAX_VELOCITY:
+                        raise ValueError(
+                            f"Velocity must be between -{MAX_VELOCITY} and {MAX_VELOCITY}"
+                        )
+                    error_message = ""
+                    simulation_started = True
+
+                except ValueError as e:
+                    error_message = str(e)
+                    error_timer = 180
+
+                except:
+                    error_message = "Invalid input"
+                    error_timer = 180
+
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if start_button.collidepoint(event.pos):
+                try:
+                    m1 = float(input_boxes[0].get_value())
+                    m2 = float(input_boxes[1].get_value())
+                    v1 = float(input_boxes[2].get_value())
+                    v2 = float(input_boxes[3].get_value())
                         # MASS VALIDATION
-                        if m1 <= 0 or m2 <= 0:
-                            raise ValueError("Mass must be greater than 0")
-                        radius1 = compute_radius(m1)
-                        radius2 = compute_radius(m2)
-
-
-
-                        # VELOCITY RANGE CHECK
-                        if abs(v1) > MAX_VELOCITY or abs(v2) > MAX_VELOCITY:
-                            raise ValueError(
-                                f"Velocity must be between -{MAX_VELOCITY} and {MAX_VELOCITY}"
-                            )
-
+                    if m1 <= 0 or m2 <= 0:
+                        raise ValueError("Mass must be greater than 0")
+                    radius1 = compute_radius(m1)
+                    radius2 = compute_radius(m2)
+                    # VELOCITY RANGE CHECK
+                    if abs(v1) > MAX_VELOCITY or abs(v2) > MAX_VELOCITY:
+                        raise ValueError(
+                            f"Velocity must be between -{MAX_VELOCITY} and {MAX_VELOCITY}"
+                        )
                         # Sab valid hai to simulation start
-                        error_message = ""
-                        simulation_started = True
+                    error_message = ""
+                    simulation_started = True
 
-                    except ValueError as e:
-                        error_message = str(e)
-                        error_timer = 180   # ~3 seconds
+                except ValueError as e:
+                    error_message = str(e)
+                    error_timer = 180   # ~3 seconds
 
-                    except:
-                        error_message = "Invalid input"
-                        error_timer = 180   # ~3 seconds
+                except:
+                    error_message = "Invalid input"
+                    error_timer = 180   # ~3 seconds
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             if pause_button.collidepoint(event.pos) and simulation_started:

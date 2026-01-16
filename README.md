@@ -82,4 +82,4 @@ The final velocities after collision are:
 v₁ = ((m₁ - m₂) / (m₁ + m₂)) * u₁ + (2 * m₂ / (m₁ + m₂)) * u₂
 v₂ = (2 * m₁ / (m₁ + m₂)) * u₁ + ((m₂ - m₁) / (m₁ + m₂)) * u₂
 ```
-Made with ❤️ using Python and Pygame
+## Made with ❤️ using Python and Pygame
